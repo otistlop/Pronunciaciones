@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My House in English</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f0;
+    color: #1a1a1a;
+    padding: 0 0 40px;
+  }
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e5e5e0;
+    padding: 20px 16px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  header p {
+    font-size: 13px;
+    color: #888;
+  }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 14px 16px 0;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    font-size: 13px;
+    font-family: inherit;
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .filter-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .room-section { padding: 20px 16px 0; }
+  .room-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e0;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .word-card {
+    background: #fff;
+    border: 1px solid #ebebeb;
+    border-radius: 14px;
+    padding: 14px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .word-en {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-align: center;
+  }
+  .word-es {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+  }
+  .speak-btn {
+    margin-top: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: #f5f5f0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    padding: 0;
+  }
+  .speak-btn:active { transform: scale(0.92); }
+  .speak-btn.playing {
+    background: #e8f0fe;
+    border-color: #4a90d9;
+  }
+  .speak-btn svg { width: 16px; height: 16px; }
+  .speak-btn.playing svg path { fill: #2563eb; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏠 My House in English</h1>
+  <p>Tap the button to hear the pronunciation</p>
+</header>
+
+<div class="filter-row" id="filters"></div>
+<div id="rooms-container"></div>
+
+<script>
+const vocab = [
+  { room: "Living Room", words: [
+    ["Sofa","Sofá"],["Armchair","Sillón"],["Coffee Table","Mesa de centro"],
+    ["TV","Televisión"],["Bookshelf","Librero"],["Lamp","Lámpara"],
+    ["Rug","Tapete"],["Curtains","Cortinas"],["Window","Ventana"],["Door","Puerta"]
+  ]},
+  { room: "Kitchen", words: [
+    ["Refrigerator","Refrigerador"],["Stove","Estufa"],["Oven","Horno"],
+    ["Microwave","Microondas"],["Sink","Fregadero"],["Counter","Mostrador"],
+    ["Cabinet","Gabinete"],["Table","Mesa"],["Chair","Silla"],["Faucet","Llave del agua"]
+  ]},
+  { room: "Bedroom", words: [
+    ["Bed","Cama"],["Pillow","Almohada"],["Blanket","Cobija"],
+    ["Wardrobe","Ropero"],["Dresser","Cómoda"],["Nightstand","Buró"],
+    ["Mirror","Espejo"],["Desk","Escritorio"],["Closet","Clóset"],["Floor","Piso"]
+  ]},
+  { room: "Bathroom", words: [
+    ["Toilet","Inodoro"],["Sink","Lavabo"],["Shower","Regadera"],
+    ["Bathtub","Tina"],["Mirror","Espejo"],["Towel","Toalla"],
+    ["Soap","Jabón"],["Toothbrush","Cepillo de dientes"],["Toilet Paper","Papel de baño"],["Faucet","Llave del agua"]
+  ]},
+  { room: "Around the House", words: [
+    ["Wall","Pared"],["Ceiling","Techo"],["Floor","Piso"],
+    ["Stairs","Escaleras"],["Hallway","Pasillo"],["Garage","Garaje"],
+    ["Balcony","Balcón"],["Backyard","Jardín"],["Front Door","Puerta principal"],["Roof","Azotea"]
+  ]}
+];
+
+let activeRoom = "All";
+
+function speakerSVG(playing) {
+  const color = playing ? "#2563eb" : "#888";
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 3.5L5.5 7H3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.5L10 16.5V3.5z" fill="${color}"/>
+    <path d="M13 7a4 4 0 0 1 0 6" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    ${playing ? `<path d="M15.5 5a7 7 0 0 1 0 10" stroke="${color}" stroke-width="1.5" fill="none" stroke-linecap="round"/>` : ''}
+  </svg>`;
+}
+
+function speak(word, btn) {
+  if (!window.speechSynthesis) { alert("Tu navegador no soporta síntesis de voz."); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.lang = "en-US";
+  utt.rate = 0.85;
+  btn.classList.add("playing");
+  btn.innerHTML = speakerSVG(true);
+  utt.onend = utt.onerror = () => {
+    btn.classList.remove("playing");
+    btn.innerHTML = speakerSVG(false);
+  };
+  window.speechSynthesis.speak(utt);
+}
+
+function renderFilters() {
+  const f = document.getElementById("filters");
+  const rooms = ["All", ...vocab.map(r => r.room)];
+  f.innerHTML = rooms.map(r =>
+    `<button class="filter-btn${r === activeRoom ? " active" : ""}" onclick="setRoom('${r}')">${r}</button>`
+  ).join("");
+}
+
+function renderRooms() {
+  const c = document.getElementById("rooms-container");
+  const filtered = activeRoom === "All" ? vocab : vocab.filter(r => r.room === activeRoom);
+  c.innerHTML = filtered.map(section => `
+    <div class="room-section">
+      <p class="room-title">${section.room}</p>
+      <div class="cards-grid">
+        ${section.words.map(([en, es]) => `
+          <div class="word-card">
+            <span class="word-en">${en}</span>
+            <span class="word-es">${es}</span>
+            <button class="speak-btn" onclick="speak('${en}', this)">${speakerSVG(false)}</button>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+window.setRoom = function(room) {
+  activeRoom = room;
+  renderFilters();
+  renderRooms();
+};
+
+renderFilters();
+renderRooms();
+</script>
+</body>
+</html>
